@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1d4ed8">
+<meta name="description" content="Prepare outcome-based question papers (Modules, Course Outcomes, Bloom's levels) and download them as A4 PDFs.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d4ed8'/%3E%3Cpath d='M20 14h18l10 10v26a2 2 0 0 1-2 2H20a2 2 0 0 1-2-2V16a2 2 0 0 1 2-2z' fill='%23fff'/%3E%3Cpath d='M38 14v10h10' fill='%23bfdbfe'/%3E%3Cpath d='M24 32h16M24 38h16M24 44h10' stroke='%231d4ed8' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<title>Question Paper Maker</title>
+<!-- Developed by: Aneesh M Das -->
+<!-- Licence: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root{
+  --bg:#f1f5f9; --card:#fff; --ink:#0f172a; --text:#1e293b; --mute:#64748b; --line:#e2e8f0; --line2:#cbd5e1;
+  --pri:#1d4ed8; --pri-h:#1e40af; --pri-soft:#eff6ff; --bad:#b91c1c; --bad-soft:#fef2f2; --ok:#15803d; --ok-soft:#f0fdf4; --gold:#fde68a;
+  --ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 var(--ui)}
+
+/* app bar */
+.top{background:#fff;border-bottom:1px solid var(--line)}
+.top-in{max-width:1360px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:12px}
+.badge{width:38px;height:38px;border-radius:10px;background:var(--pri);display:grid;place-items:center;flex:none}
+.top h1{font:650 17px/1.2 var(--ui);margin:0;color:var(--ink);letter-spacing:-.01em}
+.top p{margin:1px 0 0;font-size:12.5px;color:var(--mute)}
+.adv{margin-left:8px;font:600 11px var(--ui);color:var(--pri);background:var(--pri-soft);padding:2px 8px;border-radius:999px;vertical-align:middle}
+
+/* layout */
+.wrap{max-width:1360px;margin:0 auto;padding:22px 24px 8px;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:24px;align-items:start}
+.nb{display:flex;flex-direction:column;gap:16px}
+.step,.setup{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px 20px;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.step-no{position:absolute;left:20px;top:19px}
+.step-no i{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--pri);color:#fff;font:600 13px var(--ui);font-style:normal}
+.step h2{font:650 17px/26px var(--ui);margin:0 0 0 38px;color:var(--ink)}
+.lead{margin:6px 0 14px;color:var(--mute);font-size:13px}
+.step .lead{margin-left:38px}
+
+.fields{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px 14px}
+.s2{grid-column:span 2}.s3{grid-column:span 3}.s4{grid-column:span 4}.s6{grid-column:span 6}
+label{display:block;font-size:12.5px;font-weight:600;color:var(--text);margin:0 0 5px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:#fff;border:1px solid var(--line2);border-radius:8px;padding:9px 11px;min-height:40px}
+input:hover,select:hover,textarea:hover{border-color:#94a3b8}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px rgba(29,78,216,.22)}
+textarea{font-size:15px;line-height:1.45;min-height:64px;resize:vertical}
+.hint{font-size:12.5px;color:var(--mute);margin:10px 0 0}
+button{font:inherit;cursor:pointer}
+details{margin-top:10px}
+summary{cursor:pointer;font-weight:600;color:var(--ink);font-size:14px}
+.setup>summary{font:650 15px var(--ui);list-style-position:inside}
+.setup .opt{font-weight:400;color:var(--mute);font-size:13px}
+.setup[open]{border-color:var(--pri)}
+.welcome{background:var(--pri-soft);border:1px solid #bfdbfe;color:#1e3a8a;border-radius:10px;padding:10px 14px;margin:10px 0 0;font-size:13px}
+
+/* sections and questions */
+.sec{margin-top:14px;padding:14px;background:#f8fafc;border:1px solid var(--line);border-radius:10px}
+.sechead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.sec h3{font:650 15px var(--ui);margin:0;color:var(--ink)}
+.ctrl{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 12px}
+.q{display:flex;gap:8px;align-items:flex-start;margin-top:12px}
+.qn{min-width:34px;text-align:right;font:600 14px/40px var(--ui);color:var(--mute)}
+.q textarea{flex:1}
+.qwrap{margin-top:6px}
+.del{flex:none;margin-top:3px;width:34px;height:34px;display:grid;place-items:center;background:none;border:1px solid transparent;border-radius:8px;color:var(--mute)}
+.del:hover{color:var(--bad);background:var(--bad-soft)}
+.add{margin-top:12px;background:#fff;border:1px dashed var(--pri);color:var(--pri);padding:8px 14px;border-radius:8px;font-weight:600;font-size:13.5px}
+.add:hover{background:var(--pri-soft)}
+.mini{background:#fff;border:1px solid var(--line2);color:var(--ink);padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600}
+.mini:hover,.mini[aria-expanded=true]{background:var(--pri-soft);border-color:var(--pri);color:var(--pri)}
+.tags{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:6px 0 0 42px}
+.tags select{min-height:34px;padding:4px 6px;font-size:13px;border-radius:6px}
+.qtools{margin:6px 0 0 42px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.det{font-size:12.5px;color:var(--mute)}
+.chip{border:1px solid var(--line2);background:#fff;border-radius:999px;padding:3px 10px;font-size:13px;color:var(--text)}
+.chip:hover{border-color:var(--pri);background:var(--pri-soft)}
+.chip.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.helper{margin:8px 0 0 42px;padding:12px 14px;background:#fff;border:1px solid #bfdbfe;border-left:4px solid var(--pri);border-radius:8px;font-size:13.5px}
+.helper p{margin:4px 0}
+.stem{display:block;text-align:left;width:100%;background:#fff;border:1px solid var(--line);border-radius:6px;padding:6px 9px;margin:3px 0;font-size:14px;color:var(--text)}
+.stem:hover{border-color:var(--pri);background:var(--pri-soft)}
+.sym .chip{min-width:32px;font-size:15px;padding:1px 7px;border-radius:6px}
+.subbox{margin-top:14px;padding:14px;background:#f8fafc;border:1px solid var(--line);border-radius:10px}
+.subbox h3{font:650 14.5px var(--ui);margin:0 0 10px;color:var(--ink)}
+.subbox textarea{min-height:84px}
+.pdfrow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:10px}
+.corow{display:grid;grid-template-columns:70px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:6px;align-items:start;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line2)}
+.corow textarea{order:9;grid-column:1/-1;min-height:46px}
+.cohead{display:none}
+.chk{display:flex;gap:8px;align-items:center;font-weight:500;margin:4px 0}.chk input{width:auto;min-height:0}
+.imgrow{display:flex;gap:10px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.imgrow img{object-fit:contain;border:1px solid var(--line);background:#fff;border-radius:6px}
+
+/* action bar */
+.actions{position:sticky;bottom:12px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;z-index:2;box-shadow:0 8px 24px -8px rgba(15,23,42,.25)}
+.go{display:inline-flex;align-items:center;gap:10px;background:var(--pri);color:#fff;border:0;border-radius:8px;padding:11px 20px;font-weight:600;font-size:15px;box-shadow:0 1px 2px rgba(15,23,42,.2)}
+.go:hover{background:var(--pri-h)}
+.fn{flex:1;min-width:210px;font-size:12.5px;color:var(--mute);overflow-wrap:anywhere}
+.fn b{color:var(--text);font-weight:600}
+#msg{display:block;margin-top:2px}
+
+/* preview */
+.desk{position:sticky;top:16px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.bar h2{font:650 17px var(--ui);margin:0;color:var(--ink)}
+.tally{font:600 12.5px var(--ui);padding:4px 12px;border-radius:999px;border:1px solid #bbf7d0;color:var(--ok);background:var(--ok-soft);cursor:pointer}
+.tally.bad{border-color:#fecaca;color:var(--bad);background:var(--bad-soft)}
+.tabs{display:flex;gap:2px;background:#e2e8f0;padding:3px;border-radius:10px;margin-bottom:12px}
+.tabs button{flex:1;border:0;background:none;padding:7px 8px;font-weight:600;font-size:13px;color:var(--mute);border-radius:8px}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected=true]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(15,23,42,.15)}
+#preview{background:#cbd5e1;padding:18px;max-height:calc(100vh - 160px);overflow:auto;border-radius:12px}
+.sheet{background:#fff;width:210mm;padding:12mm 15mm;box-shadow:0 6px 24px -6px rgba(15,23,42,.35);margin:0 auto}
+.pane{background:#fff;padding:18px;max-height:calc(100vh - 160px);overflow:auto;border:1px solid var(--line);border-radius:12px;font-size:13.5px}
+.pane h3{font:650 15px var(--ui);color:var(--ink);margin:16px 0 6px}.pane h3:first-child{margin-top:0}
+.pane table{border-collapse:collapse;width:100%;margin:4px 0 8px;font-size:13px}
+.pane th,.pane td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+.pane th{background:#f1f5f9;color:var(--ink)}
+.barv{display:inline-block;height:8px;background:var(--pri);vertical-align:middle;margin-right:6px;border-radius:4px}
+.warn{background:var(--bad-soft);border-left:4px solid var(--bad);padding:7px 11px;margin:6px 0;border-radius:6px}
+.okay{background:var(--ok-soft);border-left:4px solid var(--ok);padding:7px 11px;margin:6px 0;border-radius:6px}
+.lvcard{border:1px solid var(--line);border-left:4px solid var(--pri);border-radius:8px;padding:9px 12px;margin:9px 0}
+.lvcard h4{margin:0 0 3px;font:650 15px var(--ui);color:var(--ink)}
+.meta{font-size:12px;color:var(--mute)}
+footer{max-width:1360px;margin:0 auto;padding:18px 24px 30px;text-align:center;font-size:12.5px;color:var(--mute)}
+footer a{color:var(--pri)}
+@media (prefers-reduced-motion:no-preference){
+  input,select,textarea,button{transition:box-shadow .15s,background-color .15s,color .15s,border-color .15s}
+}
+@media (max-width:940px){
+  .wrap{grid-template-columns:1fr;padding:14px 12px 4px;gap:20px}
+  .desk{position:static}
+  #preview,.pane{max-height:none}
+}
+@media (max-width:600px){
+  .top-in{padding:10px 14px}
+  .step,.setup{padding:16px 14px 18px}
+  .step-no{left:14px}
+  .s2{grid-column:span 3}.s3,.s4{grid-column:span 6}
+  .tags,.qtools,.helper{margin-left:0}.tags{grid-template-columns:1fr 1fr}
+  .corow{grid-template-columns:1fr 1fr}.corow .del{grid-column:1/-1;justify-self:end;order:10}
+  .go{width:100%;justify-content:center}
+  #preview{padding:10px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="badge" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></div>
+    <div>
+      <h1>Question Paper Maker<span class="adv">Outcome-based</span></h1>
+      <p id="mhsub">Set up your institution to begin</p>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="nb" aria-label="Question paper details">
+
+    <details class="setup" id="setup">
+      <summary>Institution and paper setup <span class="opt">(do this once)</span></summary>
+      <div class="welcome" id="welcome">Welcome. Enter your institution's name and, if you like, upload a logo. Everything you change here is remembered on this device.</div>
+
+      <div class="subbox">
+        <h3>Institution</h3>
+        <div class="fields">
+          <div class="s6"><label for="cf-college">Institution name</label><input type="text" id="cf-college" placeholder="e.g. Sample College of Arts and Science" autocomplete="off"></div>
+          <div class="s6"><label for="cf-univ">University or board (optional, printed above the name)</label><input type="text" id="cf-univ" placeholder="e.g. Sample University" autocomplete="off"></div>
+          <div class="s6"><label for="cf-address">Address line (optional)</label><input type="text" id="cf-address" autocomplete="off"></div>
+          <div class="s3"><label for="cf-logo">Logo (PNG or JPG, optional)</label><input type="file" id="cf-logo" accept="image/*">
+            <div class="imgrow"><img id="cf-logo-prev" alt="Current logo" width="48" height="48" hidden><button type="button" class="mini" id="cf-logo-reset">Remove logo</button></div></div>
+          <div class="s3"><label for="cf-hmode">Paper header style</label><select id="cf-hmode"><option value="logo">Logo and institution name</option><option value="nameplate">Nameplate image only</option></select>
+            <label for="cf-np" style="margin-top:8px">Nameplate image (optional wide banner)</label><input type="file" id="cf-np" accept="image/*">
+            <div class="imgrow"><img id="cf-np-prev" alt="Current nameplate" hidden style="max-width:100%;max-height:50px"><button type="button" class="mini" id="cf-np-reset">Remove nameplate</button></div></div>
+        </div>
+      </div>
+
+      <div class="subbox">
+        <h3>Paper style</h3>
+        <div class="fields">
+          <div class="s6"><label for="cf-title">Exam title (type {sem} where the semester should appear)</label><input type="text" id="cf-title" autocomplete="off"></div>
+          <div class="s2"><label for="cf-secw">Word for "Section" (e.g. Part)</label><input type="text" id="cf-secw" autocomplete="off"></div>
+          <div class="s2"><label for="cf-num">Question numbering</label><select id="cf-num"><option value="1.">1.</option><option value="Q1.">Q1.</option><option value="1)">1)</option><option value="(1)">(1)</option><option value="Q.1">Q.1</option></select></div>
+          <div class="s2"><label for="cf-font">Paper font</label><select id="cf-font"><option>Arial</option><option>Times New Roman</option><option>Georgia</option></select></div>
+          <div class="s2"><label for="cf-qpt">Question size in pt (blank = 11)</label><input type="number" id="cf-qpt" min="8" max="16" placeholder="11"></div>
+          <div class="s4"><label class="chk"><input type="checkbox" id="cf-marks"> Show marks beside each question, e.g. [3]</label>
+            <label class="chk"><input type="checkbox" id="cf-boldn"> Bold question numbers</label>
+            <label class="chk"><input type="checkbox" id="cf-restart"> Restart numbering in every section</label>
+            <label class="chk"><input type="checkbox" id="cf-date"> Show the examination month and year</label></div>
+        </div>
+      </div>
+
+      <div class="subbox">
+        <h3>Course structure</h3>
+        <div class="fields">
+          <div class="s2"><label for="cf-modw">Module word</label><input type="text" id="cf-modw" autocomplete="off"></div>
+          <div class="s2"><label for="cf-nmods">Number of modules</label><input type="number" id="cf-nmods" min="1" max="12"></div>
+          <div class="s2"></div>
+          <div class="s2"><label for="cf-unitw">Unit word</label><input type="text" id="cf-unitw" autocomplete="off"></div>
+          <div class="s2"><label for="cf-nunits">Number of units</label><input type="number" id="cf-nunits" min="1" max="60"></div>
+          <div class="s2"></div>
+          <div class="s2"><label for="cf-cow">Outcome word</label><input type="text" id="cf-cow" autocomplete="off"></div>
+          <div class="s2"><label for="cf-ncos">Number of outcomes</label><input type="number" id="cf-ncos" min="1" max="12"></div>
+        </div>
+        <p class="hint">Press Tab or Enter after changing these. Questions you have already tagged keep their tags where the numbers still exist.</p>
+      </div>
+
+      <div class="subbox">
+        <h3>Settings file</h3>
+        <div class="pdfrow"><button type="button" class="mini" id="cf-export">Save settings file</button><button type="button" class="mini" id="cf-import">Load settings file</button><input type="file" id="cf-file" accept=".json,application/json" hidden><button type="button" class="mini" id="cf-reset">Reset everything</button></div>
+        <p class="hint" id="cf-msg" role="status">Save a settings file to share your setup with colleagues.</p>
+      </div>
+    </details>
+
+    <div class="step">
+      <span class="step-no"><i>1</i></span>
+      <h2>Course details</h2>
+      <p class="lead" id="ttnote"></p>
+      <div class="fields">
+        <div class="s3"><label for="ctype">Paper layout</label><select id="ctype"></select></div>
+        <div class="s3"><label for="ctext">Course type (optional)</label><input type="text" id="ctext" placeholder="e.g. Core course" autocomplete="off"></div>
+        <div class="s2"><label for="sem">Semester</label><select id="sem"></select></div>
+        <div class="s2"><label for="mon">Month</label><select id="mon"></select></div>
+        <div class="s2"><label for="yr">Year</label><select id="yr"></select></div>
+        <div class="s3"><label for="dept">Department</label><input type="text" id="dept" placeholder="e.g. Physics" autocomplete="off"></div>
+        <div class="s3"><label for="code">Course code</label><input type="text" id="code" placeholder="e.g. PHY101" autocomplete="off"></div>
+        <div class="s6"><label for="cname">Course name</label><input type="text" id="cname" placeholder="Name of the course" autocomplete="off"></div>
+        <div class="s4"><label for="fac">Faculty name</label><input type="text" id="fac" placeholder="Course faculty" autocomplete="off"></div>
+        <div class="s2"><label for="nstud">Students attending</label><input type="number" id="nstud" min="0" placeholder="Number"></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="step-no"><i>2</i></span>
+      <h2>Course outcomes <small style="font-weight:400;color:var(--mute);font-size:13px">(optional)</small></h2>
+      <p class="lead">Fill in the statements if you want them listed in the outcome dropdown and the Blueprint. You can skip this step and still tag questions. Nothing here is printed on the paper.</p>
+      <div class="subbox">
+        <div id="cos"></div>
+        <details>
+          <summary>Paste outcomes from a syllabus table</summary>
+          <textarea id="copaste" rows="5" placeholder="CO1 Students will recall key features of ... R F&#10;CO2 Students will explain ... U C"></textarea>
+          <button class="mini" id="coread" type="button" style="margin-top:6px">Read outcomes</button>
+        </details>
+      </div>
+      <div class="subbox">
+        <h3>Programme outcomes (optional)</h3>
+        <textarea id="pos" rows="4" placeholder="PO1 ...&#10;PSO1 ..."></textarea>
+        <p class="hint">One per line. Used only for the coverage check in the Blueprint tab.</p>
+      </div>
+      <span class="cohead"><span>CO</span></span>
+    </div>
+
+    <div class="step">
+      <span class="step-no"><i>3</i></span>
+      <h2>Time and marks</h2>
+      <p class="lead">Both start from the chosen layout. Change them if your paper differs.</p>
+      <div class="fields">
+        <div class="s3"><label for="time">Time</label><input type="text" id="time" value="1 Hour"></div>
+        <div class="s3"><label for="maxm">Max marks</label><input type="number" id="maxm" min="0"></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="step-no"><i>4</i></span>
+      <h2>Questions</h2>
+      <p class="lead">Type each question, then tag it. Use <b>Frame with Bloom's</b> for verbs and stems, and <b>Symbols</b> for formulas. Type <b>x^2</b> or <b>H_2O</b> for x² or H₂O. Other scripts such as Malayalam work with your device's keyboard.</p>
+      <div class="welcome" style="margin:0 0 4px"><b>Quick guide:</b> Type a question, or tap Frame with Bloom's. Choose a level, then click a verb or stem to build the question. The app also suggests a level as you type. Tag Module, Unit and CO, then check the Blueprint tab for balance.</div>
+      <div id="secs"></div>
+      <div class="pdfrow"><button class="add" id="addsec" type="button" style="margin:0">+ Add a section</button>
+        <button class="mini" id="savelay" type="button">Save this layout for this paper layout</button>
+        <button class="mini" id="resetlay" type="button">Back to original layout</button></div>
+      <p class="hint" id="laymsg" role="status"></p>
+    </div>
+
+    <div class="actions">
+      <button class="go" id="dl" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M5 20h14"/></svg>
+        Download PDF
+      </button>
+      <div class="fn">Saves as <b id="fname"></b><span id="msg" role="status"></span></div>
+    </div>
+  </section>
+
+  <aside class="desk" aria-label="Preview and guides">
+    <div class="bar">
+      <h2 id="deskh">Preview</h2>
+      <div class="tally" id="tally" aria-live="polite" role="button" tabindex="0"></div>
+    </div>
+    <div class="tabs" id="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="paper" aria-selected="true">Paper</button>
+      <button type="button" role="tab" data-tab="bp" aria-selected="false">Blueprint</button>
+      <button type="button" role="tab" data-tab="guide" aria-selected="false">Bloom's guide</button>
+    </div>
+    <div id="preview"></div>
+    <div class="pane" id="pane-bp" hidden></div>
+    <div class="pane" id="pane-guide" hidden></div>
+  </aside>
+</main>
+
+<footer>
+  Developed by <strong>Aneesh M Das</strong>.
+  Shared under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">Creative Commons BY-NC-SA 4.0</a>.
+</footer>
+<script>
+"use strict";
+const LOGO = "";
+
+const PRESETS = [
+  { label: "Long format \u00B7 3 sections \u00B7 35 marks",  t: "major" },
+  { label: "Short format \u00B7 3 sections \u00B7 25 marks", t: "found" },
+  { label: "Single section \u00B7 blank",                   t: "single" }
+];
+const SEMESTERS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"].sort();
+const TEMPLATES = {
+  major: { maxMarks: 35, sections: [
+    { label: "A", mode: "allc",   marks: 3, ceiling: 9,    choose: 1, count: 4 },
+    { label: "B", mode: "allc",   marks: 6, ceiling: 18,   choose: 1, count: 4 },
+    { label: "C", mode: "choose", marks: 8, ceiling: null, choose: 1, count: 2 }
+  ]},
+  single: { maxMarks: 10, sections: [
+    { label: "A", mode: "all", marks: 2, ceiling: null, choose: 1, count: 5 }
+  ]},
+  found: { maxMarks: 25, sections: [
+    { label: "1", mode: "any",    marks: 3,  ceiling: 9,    choose: 1, count: 5 },
+    { label: "2", mode: "any",    marks: 6,  ceiling: 6,    choose: 1, count: 2 },
+    { label: "3", mode: "choose", marks: 10, ceiling: null, choose: 1, count: 2 }
+  ]}
+};
+
+// ---- Bloom's revised taxonomy ----
+const LEVELS = [
+  { k: "R", name: "Remember", short: "Retrieve facts, terms and basic concepts from memory.",
+    spec: "The answer is a term, definition, list, name, date or fact that the student has learnt. No reasoning is needed.",
+    marks: "Usually 1–3 marks (very short or short answer).",
+    verbs: ["Define", "List", "Name", "State", "Identify", "Recall", "Label", "Recognise", "Match", "Select", "Mention", "Enumerate", "Locate", "Reproduce"],
+    stems: ["Define … .", "List the … of … .", "Name the … who … .", "State the … of … .", "What is meant by … ?", "Identify the … in … .", "Mention any … features of … ."],
+    find: ["define", "list", "name", "state", "identify", "recall", "label", "recognise", "recognize", "match", "select", "mention", "enumerate", "locate", "reproduce", "what is", "what are", "who", "when", "where", "which"] },
+  { k: "U", name: "Understand", short: "Explain ideas or concepts in one's own words.",
+    spec: "The student shows meaning: explains, describes, gives examples, classifies or summarises. The answer is not copied word for word from the text.",
+    marks: "Usually 3–6 marks (short answer or short paragraph).",
+    verbs: ["Explain", "Describe", "Discuss", "Summarise", "Interpret", "Classify", "Illustrate", "Paraphrase", "Outline", "Give examples of", "Elaborate", "Distinguish the meaning of", "Predict", "Infer"],
+    stems: ["Explain the concept of … in your own words.", "Describe how … works.", "Discuss the significance of … .", "Summarise the main ideas of … .", "Illustrate … with suitable examples.", "Classify … into … and give one example of each.", "Write a short note on … ."],
+    find: ["explain", "describe", "discuss", "summarise", "summarize", "interpret", "classify", "illustrate", "paraphrase", "outline", "restate", "exemplify", "infer", "predict", "elaborate", "comment", "why", "how does", "short note", "give reasons", "in your own words", "give examples", "with examples"] },
+  { k: "Ap", name: "Apply", short: "Use knowledge in a new or practical situation.",
+    spec: "The student uses a rule, method, formula or theory on a given case, problem or data. The situation is new to the student.",
+    marks: "Usually 3–8 marks (problem, case or practical question).",
+    verbs: ["Apply", "Solve", "Calculate", "Compute", "Demonstrate", "Determine", "Derive", "Prepare", "Sketch", "Draw", "Plot", "Implement", "Employ", "Show how", "Modify"],
+    stems: ["Apply … to the case of … .", "Calculate … given that … .", "Solve the following … .", "Demonstrate how … can be used to … .", "Prepare a … for … .", "Draw and label … .", "Derive the expression for … ."],
+    find: ["apply", "solve", "calculate", "compute", "demonstrate", "determine", "derive", "prepare", "sketch", "draw", "plot", "implement", "employ", "execute", "modify", "operate", "find", "show how"] },
+  { k: "An", name: "Analyse", short: "Break material into parts and see how the parts relate.",
+    spec: "The student separates a whole into parts, compares, finds causes or relationships, and supports the points with evidence.",
+    marks: "Usually 6–10 marks (paragraph or essay).",
+    verbs: ["Analyse", "Compare", "Contrast", "Differentiate", "Distinguish between", "Examine", "Investigate", "Categorise", "Deconstruct", "Break down", "Relate"],
+    stems: ["Compare and contrast … and … .", "Differentiate between … and … with examples.", "Analyse the factors that … .", "Examine the relationship between … and … .", "Break down … into its main components.", "What evidence supports … ? Discuss."],
+    find: ["analyse", "analyze", "compare", "contrast", "differentiate", "distinguish", "examine", "investigate", "categorise", "categorize", "deconstruct", "dissect", "difference between", "differences between"] },
+  { k: "E", name: "Evaluate", short: "Judge or justify a decision, argument or work using criteria.",
+    spec: "The student takes a position and defends it with criteria and evidence. The answer must contain a judgement, not only description.",
+    marks: "Usually 6–10 marks (essay).",
+    verbs: ["Evaluate", "Assess", "Justify", "Critique", "Judge", "Defend", "Argue", "Appraise", "Recommend", "Validate", "Prioritise", "Critically examine"],
+    stems: ["Evaluate the effectiveness of … .", "Critically assess … .", "Justify the use of … in … .", "Argue for or against … .", "Judge the validity of … .", "To what extent is … ? Justify your answer."],
+    find: ["evaluate", "assess", "justify", "critique", "criticise", "criticize", "judge", "defend", "argue", "appraise", "recommend", "validate", "verify", "prioritise", "critically", "to what extent", "how far"] },
+  { k: "C", name: "Create", short: "Put elements together to form something new.",
+    spec: "The student produces an original plan, design, model, hypothesis or piece of work by combining ideas.",
+    marks: "Usually 8–10 marks (essay or project-type question).",
+    verbs: ["Create", "Design", "Develop", "Compose", "Formulate", "Propose", "Devise", "Generate", "Construct", "Plan", "Hypothesise", "Synthesise", "Compile"],
+    stems: ["Design a … to … .", "Develop a plan for … .", "Propose a solution to … .", "Formulate a hypothesis for … .", "Compose a … on … .", "Create an original … that combines … and … ."],
+    find: ["create", "design", "develop", "compose", "formulate", "propose", "invent", "generate", "devise", "construct", "hypothesise", "hypothesize", "synthesise", "synthesize", "compile", "assemble", "produce", "build"] }
+];
+const KNOW = [
+  { k: "F", name: "Factual",       desc: "Terminology, specific details, elements the student must know." },
+  { k: "C", name: "Conceptual",    desc: "Classifications, principles, theories, models and structures." },
+  { k: "P", name: "Procedural",    desc: "Methods, techniques, skills and criteria for when to use them." },
+  { k: "M", name: "Metacognitive", desc: "Strategies, self-knowledge, reflection on one's own learning." }
+];
+const SYMS = [
+  ["Maths", "± × ÷ = ≠ ≈ ≡ < > ≤ ≥ ∝ ∞ √ ∛ ° ′ ″ % ‰ π ∑ ∏ ∫ ∬ ∮ ∂ ∆ ∇ ∈ ∉ ⊂ ⊃ ⊆ ⊇ ∪ ∩ ∅ ∀ ∃ ∴ ∵ ⊥ ∥ ∠ ½ ⅓ ¼ ⅔ ¾ ℕ ℤ ℚ ℝ ℂ"],
+  ["Greek", "α β γ δ ε ζ η θ λ μ ν ξ π ρ σ τ φ χ ψ ω Γ Δ Θ Λ Ξ Π Σ Φ Ψ Ω"],
+  ["Arrows", "→ ← ↔ ⇒ ⇐ ⇔ ⇌ ⟶ ↑ ↓"],
+  ["Superscript", "⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁺ ⁻ ⁼ ⁿ ⁱ"],
+  ["Subscript", "₀ ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉ ₊ ₋ ₌ ₙ ₓ"],
+  ["Science", "° Å µ Ω ℓ ħ ℃ ℉ · • ⊕ ⊗ ‖ ⟨ ⟩"],
+  ["Type as markup", "^{} _{}"]
+];
+
+// ---- rule-based level detector (a suggestion only) ----
+function detect(text) {
+  const words = text.toLowerCase().replace(/[^a-z\s]/g, " ").split(/\s+/).filter(Boolean).slice(0, 12);
+  const t = " " + words.join(" ") + " ";
+  let best = -1, why = [];
+  LEVELS.forEach((L, i) => {
+    const f = L.find.filter(w => t.includes(" " + w + " "));
+    if (f.length) { best = i; why = f; }
+  });
+  return best < 0 ? null : { lv: LEVELS[best].k, why };
+}
+const lvName = k => { const L = LEVELS.find(l => l.k === k); return L ? L.name : ""; };
+function marksHint(m) {
+  if (m <= 3) return `At ${m} marks, questions are usually Remember or Understand (short answer).`;
+  if (m <= 6) return `At ${m} marks, questions are usually Understand, Apply or Analyse.`;
+  return `At ${m} marks (essay), questions usually go up to Analyse, Evaluate or Create.`;
+}
+
+// ---- institution settings (editable in the app) ----
+const DEF_CFG = {
+  college: "", address: "", univ: "",
+  logo: "", nameplate: "", headerMode: "logo",
+  examTitle: "INTERNAL ASSESSMENT TEST", showDate: true, showMarks: true,
+  secWord: "Section", numStyle: "1.", restart: false, boldNum: true, font: "Arial", qPt: "",
+  modWord: "Module", nMods: 4, unitWord: "Unit", nUnits: 12, coWord: "CO", nCOs: 5,
+  tpl: {}
+};
+let cfg = JSON.parse(JSON.stringify(DEF_CFG));
+const CFG_KEY = "qpm_blank_v1";
+function loadCfg() { try { const j = localStorage.getItem(CFG_KEY); if (j) Object.assign(cfg, JSON.parse(j)); } catch (e) {} }
+function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (e) {} }
+const logoSrc = () => cfg.logo || "";
+
+// ---- state ----
+let state = { ctype: "major", sections: [], cos: [], mods: [], open: null, tab: "paper" };
+let lastTA = null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+const newQ = () => ({ t: "", mod: "", unit: "", co: "", lv: "" });
+const getTpl = ctype => cfg.tpl[ctype] || TEMPLATES[ctype];
+
+function loadTemplate(ctype) {
+  const old = state.sections || [];
+  const t = getTpl(ctype);
+  state.ctype = ctype;
+  state.open = null;
+  state.sections = t.sections.map((s, i) => {
+    const prev = (old[i] && old[i].qs) || [];
+    const qs = Array.from({ length: s.count }, (_, k) => prev[k] || newQ());
+    return { label: s.label, mode: s.mode, marks: s.marks, ceiling: s.ceiling, choose: s.choose, instr: s.instr || "", foot: s.foot || "", qs };
+  });
+  $("maxm").value = t.maxMarks;
+  const custom = !!cfg.tpl[ctype];
+  $("ttnote").textContent = custom ? "Loaded your saved layout for this paper layout."
+    : ctype === "major" ? "Long format: three sections, 35 marks. Every part can be edited below."
+    : ctype === "found" ? "Short format: three sections, 25 marks. Every part can be edited below."
+    : "A single section to start from. Add sections or change marks as you need.";
+  buildForm();
+  refresh();
+}
+
+function instruction(s) {
+  if (s.instr && s.instr.trim()) return s.instr.trim().replace(/^\(|\)$/g, "");
+  const m = s.marks;
+  if (s.mode === "all") return `Answer all questions. Each question carries ${m} marks`;
+  if (s.mode === "allc") return `All questions can be answered. Each question carries ${m} marks`;
+  if (s.mode === "choose") return `Answer any ${s.choose} question${s.choose > 1 ? "s" : ""} out of ${s.qs.length} questions. Each question carries ${m} marks`;
+  return `Any number of questions may be answered. Each question carries ${m} marks`;
+}
+function footnote(s) {
+  if (s.foot && s.foot.trim()) return s.foot.trim() === "-" ? "" : esc(s.foot.trim());
+  const n = s.qs.length;
+  if (s.mode === "all") return `(${n}X${s.marks}=${n * s.marks})`;
+  if (s.mode === "choose") return `(${s.choose}X${s.marks}=${s.choose * s.marks})`;
+  return s.ceiling ? `(Ceiling at ${s.ceiling} marks)` : "";
+}
+const qLabel = n => ({ "1.": n + ".", "Q1.": "Q" + n + ".", "1)": n + ")", "(1)": "(" + n + ")", "Q.1": "Q." + n })[cfg.numStyle] || n + ".";
+const secTitle = s => (cfg.secWord.trim() ? cfg.secWord.trim() + " " : "") + s.label;
+
+function optList(arr, val, ph) {
+  return `<option value="">${ph}</option>` + (val && !arr.includes(val) ? `<option value="${esc(val)}" selected>${esc(val)}</option>` : "")
+    + arr.map(x => `<option value="${esc(x)}"${x === val ? " selected" : ""}>${esc(x)}</option>`).join("");
+}
+function coOptions(val) {
+  const cos = state.cos.filter(c => c.code.trim());
+  const known = cos.some(c => c.code === val);
+  return `<option value="">${esc(cfg.coWord)}…</option>` + (val && !known ? `<option value="${esc(val)}" selected>${esc(val)}</option>` : "")
+    + cos.map(c => `<option value="${esc(c.code)}"${c.code === val ? " selected" : ""}>${esc(c.code)}${c.text ? " – " + esc(c.text.slice(0, 40)) : ""}</option>`).join("");
+}
+const lvOptions = val => `<option value="">Level…</option>` + LEVELS.map(l => `<option value="${l.k}"${l.k === val ? " selected" : ""}>${l.k} – ${l.name}</option>`).join("");
+
+function helperHTML(si, qi) {
+  const o = state.open, s = state.sections[si], q = s.qs[qi];
+  if (o.kind === "sym") {
+    return `<div class="sym">` + SYMS.map(g => `<p><b>${g[0]}</b></p><div class="chips">` +
+      g[1].split(" ").map(c => `<button type="button" class="chip" data-ins="${esc(c)}" data-s="${si}" data-q="${qi}">${esc(c)}</button>`).join("") + `</div>`).join("") +
+      `<p class="meta">Superscripts and subscripts: type <b>x^2</b>, <b>e^{-x}</b>, <b>H_2O</b> or <b>x_{i+1}</b>. They are converted on the paper.</p></div>`;
+  }
+  const L = LEVELS.find(l => l.k === q.lv);
+  let h = `<p><b>Pick the Bloom's level</b></p><div class="chips">` +
+    LEVELS.map(l => `<button type="button" class="chip${l.k === q.lv ? " on" : ""}" data-lvpick="${l.k}" data-s="${si}" data-q="${qi}">${l.k} – ${l.name}</button>`).join("") + `</div>
+    <p class="meta">${esc(marksHint(s.marks))}</p>`;
+  if (L) {
+    h += `<p><b>${L.name}.</b> ${esc(L.short)}</p><p>${esc(L.spec)}</p><p class="meta">${esc(L.marks)}</p>
+      <p><b>Action verbs</b> (click to add)</p><div class="chips">` +
+      L.verbs.map(v => `<button type="button" class="chip" data-ins="${esc(v)}" data-verb="1" data-s="${si}" data-q="${qi}">${esc(v)}</button>`).join("") + `</div>
+      <p><b>Question stems</b> (click to add, then replace the …)</p>` +
+      L.stems.map(v => `<button type="button" class="stem" data-ins="${esc(v)}" data-stem="1" data-s="${si}" data-q="${qi}">${esc(v)}</button>`).join("");
+  }
+  return h;
+}
+
+function buildForm() {
+  const box = $("secs");
+  box.innerHTML = "";
+  let qno = 0;
+  const modNames = state.mods.map(m => m.name);
+  state.sections.forEach((s, si) => {
+    if (cfg.restart) qno = 0;
+    const d = document.createElement("div");
+    d.className = "sec";
+    const opt = (v, t) => `<option value="${v}"${s.mode === v ? " selected" : ""}>${t}</option>`;
+    d.innerHTML = `<div class="sechead"><h3>${esc(secTitle(s))}</h3>${state.sections.length > 1 ? `<button type="button" class="mini" data-delsec="${si}">Remove this ${esc(cfg.secWord.trim().toLowerCase() || "section")}</button>` : ""}</div>
+      <div class="ctrl">
+        <div><label for="l${si}">Label</label><input id="l${si}" type="text" maxlength="12" data-f="label" data-s="${si}" value="${esc(s.label)}"></div>
+        <div><label for="m${si}">Answering rule</label>
+          <select id="m${si}" data-f="mode" data-s="${si}">
+            ${opt("all", "Answer all")}${opt("allc", "All answerable, with ceiling")}${opt("any", "Any number, with ceiling")}${opt("choose", "Choose some")}
+          </select></div>
+        <div><label for="k${si}">Marks per question</label><input id="k${si}" type="number" min="1" data-f="marks" data-s="${si}" value="${s.marks}"></div>
+        <div ${s.mode === "any" || s.mode === "allc" ? "" : "hidden"}><label for="c${si}">Ceiling (marks)</label><input id="c${si}" type="number" min="0" data-f="ceiling" data-s="${si}" value="${s.ceiling ?? ""}"></div>
+        <div ${s.mode === "choose" ? "" : "hidden"}><label for="n${si}">Answer how many</label><input id="n${si}" type="number" min="1" data-f="choose" data-s="${si}" value="${s.choose}"></div>
+      </div>
+      <details><summary>Instruction and footer text</summary>
+        <label for="i${si}">Instruction line (blank = automatic)</label><input id="i${si}" type="text" data-f="instr" data-s="${si}" value="${esc(s.instr)}" placeholder="${esc(instruction({ ...s, instr: "" }))}">
+        <label for="o${si}" style="margin-top:8px">Footer note (blank = automatic, "-" = none)</label><input id="o${si}" type="text" data-f="foot" data-s="${si}" value="${esc(s.foot)}" placeholder="${esc(footnote({ ...s, foot: "" }).replace(/&amp;/g, "&"))}">
+      </details>
+      <div id="qs${si}"></div>
+      <button class="add" type="button" data-add="${si}">+ Add a question</button>`;
+    box.appendChild(d);
+    const qbox = d.querySelector("#qs" + si);
+    s.qs.forEach((q, qi) => {
+      qno++;
+      const mod = state.mods.find(m => m.name === q.mod);
+      const units = mod ? mod.units : [];
+      const open = state.open && state.open.k === si + ":" + qi ? state.open : null;
+      const r = document.createElement("div");
+      r.className = "qwrap";
+      r.innerHTML = `<div class="q"><span class="qn">${esc(qLabel(qno))}</span><textarea data-s="${si}" data-q="${qi}" aria-label="Question ${qno}" placeholder="Type question ${qno}">${esc(q.t)}</textarea>
+        <button class="del" type="button" data-del="${si}:${qi}" aria-label="Remove question ${qno}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+        <div class="tags">
+          <select data-t="mod" data-s="${si}" data-q="${qi}" aria-label="Module for question ${qno}">${optList(modNames, q.mod, esc(cfg.modWord) + "…")}</select>
+          <select data-t="unit" data-s="${si}" data-q="${qi}" aria-label="Unit for question ${qno}">${optList(units, q.unit, esc(cfg.unitWord) + "…")}</select>
+          <select data-t="co" data-s="${si}" data-q="${qi}" aria-label="Course outcome for question ${qno}">${coOptions(q.co)}</select>
+          <select data-t="lv" data-s="${si}" data-q="${qi}" aria-label="Bloom's level for question ${qno}">${lvOptions(q.lv)}</select>
+        </div>
+        <div class="qtools">
+          <button type="button" class="mini" data-frame="${si}:${qi}" aria-expanded="${!!(open && open.kind === "frame")}">Frame with Bloom's</button>
+          <button type="button" class="mini" data-symtog="${si}:${qi}" aria-expanded="${!!(open && open.kind === "sym")}">Symbols</button>
+          <span class="det" id="det${si}_${qi}"></span>
+        </div>
+        ${open ? `<div class="helper">${helperHTML(si, qi)}</div>` : ""}`;
+      qbox.appendChild(r);
+      updateDet(si, qi, r);
+    });
+  });
+}
+
+function updateDet(si, qi, root) {
+  const el = (root || document).querySelector("#det" + si + "_" + qi);
+  if (!el) return;
+  const q = state.sections[si].qs[qi];
+  const d = q.t.trim().length > 3 ? detect(q.t) : null;
+  if (d && d.lv !== q.lv) {
+    el.innerHTML = `Looks like <b>${lvName(d.lv)}</b> (${esc(d.why.join(", "))}) <button type="button" class="chip" data-usedet="${d.lv}" data-s="${si}" data-q="${qi}">Use</button>`;
+  } else el.textContent = "";
+}
+</script>
+<script>
+"use strict";
+const SIZES = { a4: { fmt: "a4", k: 1, hk: 1.4, margin: [10, 15, 12, 15], inner: 180, pn: 9, scale: 2 } };
+const STYLES = { major: { qPt: 11 }, found: { qPt: 11 }, single: { qPt: 11 } };
+const curSize = () => "a4";
+
+// question text -> HTML, with x^2 / H_2O / e^{-x} / x_{i+1} turned into superscripts and subscripts
+function fmtQ(s) {
+  const sup = a => `<sup style="font-size:70%;line-height:0;vertical-align:super">${a}</sup>`;
+  const sub = a => `<sub style="font-size:70%;line-height:0;vertical-align:sub">${a}</sub>`;
+  return esc(s)
+    .replace(/\^\{([^}]*)\}/g, (m, a) => sup(a))
+    .replace(/\^([+\-]?[0-9]+|[A-Za-z])/g, (m, a) => sup(a))
+    .replace(/([A-Za-z0-9)\]}])_\{([^}]*)\}/g, (m, p, a) => p + sub(a))
+    .replace(/([A-Za-z0-9)\]}])_([0-9]+|[a-z](?![a-z]))/g, (m, p, a) => p + sub(a));
+}
+
+function fontCss() { return `'${cfg.font}', ${cfg.font === "Times New Roman" || cfg.font === "Georgia" ? "Times, serif" : "Helvetica, sans-serif"}`; }
+function deptShort(d) {
+  if (!d) return "";
+  const w = d.replace(/[^A-Za-z\s]/g, "").split(/\s+/).filter(x => x && !/^(and|of|the|in)$/i.test(x));
+  return (w.length > 1 ? w.map(x => x[0]).join("").slice(0, 4) : (w[0] || "").slice(0, 3)).toUpperCase();
+}
+function paperHTML(sizeKey, forPreview) {
+  const z = SIZES[sizeKey], k = z.k, st = STYLES[state.ctype];
+  const pt = n => (n * k).toFixed(2) + "pt", mm = n => (n * k).toFixed(2) + "mm";
+  const sem = $("sem").value || "";
+  const mon = $("mon").value && $("yr").value ? $("mon").value + " " + $("yr").value : "";
+  const qPt = Number(cfg.qPt) > 5 ? Number(cfg.qPt) : st.qPt;
+  const title = cfg.examTitle.replace(/\{sem\}/gi, sem || "______").trim();
+  const name = cfg.college.trim(), univ = cfg.univ.trim(), addr = cfg.address.trim(), hasLogo = !!cfg.logo;
+  let header = "";
+  if (cfg.headerMode === "nameplate" && cfg.nameplate) {
+    header = `<div style="text-align:center"><img src="${cfg.nameplate}" style="max-width:100%;max-height:${mm(30)};object-fit:contain" alt=""></div>`;
+  } else if (name || univ || addr || hasLogo || forPreview) {
+    const empty = !(name || univ || addr);
+    header = `<div style="display:flex;align-items:center;gap:${mm(4)}">
+      ${hasLogo ? `<img src="${cfg.logo}" style="width:${mm(17)};height:${mm(17)};object-fit:contain" alt="">` : ""}
+      <div style="flex:1;${hasLogo ? "" : "text-align:center"}">
+        ${univ ? `<div style="font-size:${pt(8.5)};letter-spacing:${pt(.6)};text-transform:uppercase;margin-bottom:${mm(.8)}">${esc(univ)}</div>` : ""}
+        <div style="font-weight:bold;font-size:${pt(16)};line-height:1.15;${empty ? "color:#999;font-weight:normal" : ""}">${esc(name || (empty ? "Your institution name" : ""))}</div>
+        ${addr ? `<div style="font-size:${pt(8.5)};margin-top:${mm(.8)}">${esc(addr)}</div>` : ""}
+      </div></div>`;
+  }
+  const lab = t => `<div style="font-size:${pt(6.8)};letter-spacing:${pt(.7)};text-transform:uppercase">${t}</div>`;
+  const cell = (l, v, o = "") => `<td style="border:0.7pt solid #000;padding:${mm(1.2)} ${mm(2.2)};vertical-align:top;${o}">${lab(l)}<div style="font-weight:bold;font-size:${pt(10.5)};min-height:${pt(13)}">${v ? esc(v) : "&nbsp;"}</div></td>`;
+  const code = $("code").value.trim(), cname = $("cname").value.trim(), dept = $("dept").value.trim(), ctext = $("ctext").value.trim();
+  let rows = `<tr>${cell("Course code", code, "width:30%")}${cell("Course name", cname)}</tr>`;
+  if (dept || ctext) rows += `<tr>${cell("Department", dept)}${cell("Course type", ctext)}</tr>`;
+  if (sem || (cfg.showDate && mon)) rows += `<tr>${cell("Semester", sem)}${cell("Examination", cfg.showDate ? mon : "")}</tr>`;
+  rows += `<tr>${cell("Time", $("time").value)}${cell("Maximum marks", $("maxm").value)}</tr>`;
+  const width = forPreview ? "width:100%" : "width:100%";
+  const line = "border-top:0.6pt solid #000";
+  let h = `<div style="${width};margin:0 auto;font-family:${fontCss()};color:#000;font-size:${pt(10)};line-height:1.3;background:#fff">
+    ${header ? header + `<div style="border-top:1.6pt solid #000;margin-top:${mm(3)}"></div>` : ""}
+    <div style="text-align:center;padding:${mm(3.4)} 0 ${mm(3)}"><div style="font-weight:bold;font-size:${pt(12)};letter-spacing:${pt(1)};text-transform:uppercase">${esc(title)}</div></div>
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed">${rows}</table>`;
+  let n = 0;
+  state.sections.forEach(s => {
+    if (cfg.restart) n = 0;
+    const f = footnote(s);
+    h += `<div style="margin-top:${mm(5.5)};page-break-inside:avoid">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1pt solid #000;padding-bottom:${mm(.8)}"><span style="font-weight:bold;font-size:${pt(11)};letter-spacing:${pt(1.1)}">${esc(secTitle(s).toUpperCase())}</span><span style="font-weight:bold;font-size:${pt(9)}">${f}</span></div>
+        <div style="font-style:italic;font-size:${pt(9.5)};margin-top:${mm(1.2)}">${esc(instruction(s))}</div>
+      </div>`;
+    s.qs.forEach(q => {
+      n++;
+      h += `<div style="display:flex;gap:${mm(2)};margin:${mm(1.8)} 0;font-size:${pt(qPt)};page-break-inside:avoid"><span style="min-width:${mm(9)};${cfg.boldNum ? "font-weight:bold" : ""}">${esc(qLabel(n))}</span><span style="flex:1;white-space:pre-wrap">${q.t.trim() ? fmtQ(q.t) : "&nbsp;"}</span>${cfg.showMarks ? `<span style="min-width:${mm(10)};text-align:right;font-size:${pt(9)};white-space:nowrap">[${s.marks}]</span>` : ""}</div>`;
+    });
+  });
+  return h + "</div>";
+}
+
+function shortWords(t, max) { return t.trim().split(/\s+/).filter(Boolean).slice(0, max).join("-"); }
+function fileName() {
+  const clean = t => t.replace(/[^\w\-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  const n = $("nstud").value;
+  const parts = [clean($("code").value.trim()), clean(shortWords($("cname").value, 3)), deptShort($("dept").value),
+    clean(shortWords($("fac").value, 4)), n ? n + "-students" : ""].filter(Boolean);
+  return (parts.length ? parts.join("_") : "Question_Paper") + ".pdf";
+}
+function effectiveMarks(s) {
+  const n = s.qs.length;
+  if (s.mode === "all") return n * s.marks;
+  if (s.mode === "choose") return s.choose * s.marks;
+  return s.ceiling ? Math.min(s.ceiling, n * s.marks) : n * s.marks;
+}
+
+function refresh() {
+  const box = $("preview");
+  const avail = box.clientWidth - 36, need = 210 * 3.7795;
+  const zoom = Math.max(0.4, Math.min(2.6, avail / need));
+  if (!box.hidden) box.innerHTML = `<div style="zoom:${zoom}"><div class="sheet">${paperHTML(curSize(), true)}</div></div>`;
+  $("fname").textContent = fileName();
+  const total = state.sections.reduce((a, s) => a + effectiveMarks(s), 0);
+  const max = Number($("maxm").value);
+  const t = $("tally");
+  t.className = "tally" + (total === max ? "" : " bad");
+  t.textContent = total === max ? `Total ${total} / ${max} marks` : `Sections add up to ${total}, Max Marks is ${max} (click to use ${total})`;
+  if (state.tab === "bp") renderBP();
+}
+
+// ================= Blueprint (on screen only) =================
+function qRows() {
+  const rows = []; let n = 0;
+  state.sections.forEach((s, si) => {
+    const per = s.qs.length ? effectiveMarks(s) / s.qs.length : 0;
+    s.qs.forEach(q => { n++; rows.push({ n, label: s.label, q, marks: per }); });
+  });
+  return rows;
+}
+const fm = x => String(Math.round(x * 10) / 10);
+function coTokens(c) { return (String(c.map || "").toUpperCase().match(/PSO\s*\d+|PO\s*\d+/g) || []).map(x => x.replace(/\s+/g, "")); }
+
+function renderBP() {
+  const rows = qRows(), total = rows.reduce((a, r) => a + r.marks, 0) || 1;
+  const pct = x => Math.round(x / total * 100) + "%";
+  const bar = x => `<span class="barv" style="width:${Math.max(0, Math.round(x / total * 90))}px"></span>`;
+  const warns = [];
+  const byLv = {}; LEVELS.forEach(l => byLv[l.k] = 0); byLv[""] = 0;
+  rows.forEach(r => byLv[r.q.lv || ""] += r.marks);
+  const untagged = rows.filter(r => !r.q.lv || !r.q.co || (state.mods.length && !r.q.mod)).length;
+  if (untagged) warns.push(`${untagged} of ${rows.length} questions are not fully tagged (Module, CO and Level).`);
+  const low = (byLv.R + byLv.U) / total, high = (byLv.An + byLv.E + byLv.C) / total;
+  if (byLv[""] < total) {
+    if (low > 0.6) warns.push(`${Math.round(low * 100)}% of the marks are Remember or Understand. Consider more Apply or higher-level questions.`);
+    if (high === 0) warns.push("No marks are at Analyse, Evaluate or Create.");
+  }
+  const used = new Set(rows.map(r => r.q.co).filter(Boolean));
+  const cos = state.cos.filter(c => c.code.trim() && (c.text.trim() || used.has(c.code)));
+  const missing = cos.filter(c => !used.has(c.code));
+  if (cos.length && missing.length) warns.push(`Not assessed: ${missing.map(c => c.code).join(", ")}.`);
+  let h = `<p class="meta">A planning aid. None of this is printed on the paper. Marks shown are the marks each question can contribute under the answering rule.</p>`;
+  h += warns.length ? warns.map(w => `<div class="warn">${esc(w)}</div>`).join("") : `<div class="okay">${untagged === 0 && rows.length ? "All questions are tagged and every CO is assessed." : "No problems found yet."}</div>`;
+  h += `<h3>Marks by Bloom's level</h3><table><tr><th>Level</th><th>Marks</th><th>Share</th></tr>` +
+    LEVELS.map(l => `<tr><td>${l.k} – ${l.name}</td><td>${fm(byLv[l.k])}</td><td>${bar(byLv[l.k])}${pct(byLv[l.k])}</td></tr>`).join("") +
+    `<tr><td>Not tagged</td><td>${fm(byLv[""])}</td><td>${bar(byLv[""])}${pct(byLv[""])}</td></tr></table>`;
+  // modules
+  const modNames = state.mods.map(m => m.name);
+  rows.forEach(r => { if (r.q.mod && !modNames.includes(r.q.mod)) modNames.push(r.q.mod); });
+  if (modNames.length) {
+    h += `<h3>Marks by Module</h3><table><tr><th>Module</th><th>Marks</th><th>Units used</th></tr>` +
+      modNames.map(m => {
+        const rr = rows.filter(r => r.q.mod === m), mm = rr.reduce((a, r) => a + r.marks, 0);
+        const def = state.mods.find(x => x.name === m), us = new Set(rr.map(r => r.q.unit).filter(Boolean));
+        return `<tr><td>${esc(m)}</td><td>${fm(mm)} ${bar(mm)}</td><td>${us.size}${def ? " of " + def.units.length : ""}</td></tr>`;
+      }).join("") + `<tr><td>Not tagged</td><td>${fm(rows.filter(r => !r.q.mod).reduce((a, r) => a + r.marks, 0))}</td><td></td></tr></table>`;
+  }
+  if (cos.length) {
+    h += `<h3>Course outcomes</h3><table><tr><th>CO</th><th>Questions</th><th>Marks</th><th>CO level</th></tr>` +
+      cos.map(c => {
+        const rr = rows.filter(r => r.q.co === c.code), mm = rr.reduce((a, r) => a + r.marks, 0);
+        return `<tr><td>${esc(c.code)}</td><td>${rr.length || "— not assessed"}</td><td>${fm(mm)}</td><td>${c.lv || ""}${c.kn ? " / " + c.kn : ""}</td></tr>`;
+      }).join("") + `</table>`;
+    const got = new Set(); cos.filter(c => used.has(c.code)).forEach(c => coTokens(c).forEach(t => got.add(t)));
+    const refs = (($("pos").value || "").split(/\r?\n/).map(l => l.match(/^\s*(PSO\s*\d+|PO\s*\d+)\s*[:.\-–]?\s*(.*)$/i)).filter(Boolean)
+      .map(m => [m[1].toUpperCase().replace(/\s+/g, ""), m[2]]));
+    if (refs.length) h += `<h3>PO / PSO coverage</h3><table>` + refs.map(r => `<tr><td>${got.has(r[0]) ? "✓" : "—"}</td><td><b>${r[0]}</b> ${esc(r[1].slice(0, 90))}</td></tr>`).join("") + `</table>`;
+    else if (got.size) h += `<h3>PO / PSO coverage</h3><p>${[...got].join(", ")}</p>`;
+  }
+  h += `<h3>Question list</h3><table><tr><th>No.</th><th>Sec</th><th>Marks</th><th>Module / Unit</th><th>CO</th><th>Level</th></tr>` +
+    rows.map(r => `<tr><td>${r.n}</td><td>${esc(r.label)}</td><td>${fm(r.marks)}</td><td>${esc(r.q.mod)}${r.q.unit ? " / " + esc(r.q.unit) : ""}</td><td>${esc(r.q.co)}</td><td>${r.q.lv}</td></tr>`).join("") + `</table>`;
+  $("pane-bp").innerHTML = h;
+}
+
+// ================= Bloom's guide =================
+function renderGuide() {
+  $("pane-guide").innerHTML = `<p class="meta">Click a verb to add it to the question you were last typing in.</p>` +
+    LEVELS.map(L => `<div class="lvcard"><h4>${L.k} – ${L.name}</h4><p>${esc(L.short)}</p><p class="meta">${esc(L.spec)} ${esc(L.marks)}</p>
+      <div class="chips">${L.verbs.map(v => `<button type="button" class="chip" data-gverb="${esc(v)}">${esc(v)}</button>`).join("")}</div></div>`).join("") +
+    `<h3>Knowledge dimension</h3><table>` + KNOW.map(k => `<tr><td><b>${k.k}</b> ${k.name}</td><td>${esc(k.desc)}</td></tr>`).join("") + `</table>`;
+}
+
+// ================= Syllabus and COs =================
+function refreshCOSelects() {
+  document.querySelectorAll("#secs select[data-t=co]").forEach(sel => {
+    const q = state.sections[+sel.dataset.s].qs[+sel.dataset.q];
+    sel.innerHTML = coOptions(q.co);
+  });
+}
+function buildCOs() {
+  $("cos").innerHTML = state.cos.map((c, i) => `<div class="corow">
+    <input data-cof="code" data-i="${i}" value="${esc(c.code)}" aria-label="CO code">
+    <textarea data-cof="text" data-i="${i}" rows="2" aria-label="CO statement" placeholder="Students will …">${esc(c.text)}</textarea>
+    <select data-cof="lv" data-i="${i}" aria-label="CO level">${lvOptions(c.lv).replace("Level…", "Level")}</select>
+    <select data-cof="kn" data-i="${i}" aria-label="Knowledge type"><option value="">Knowledge</option>${KNOW.map(k => `<option value="${k.k}"${k.k === c.kn ? " selected" : ""}>${k.k} – ${k.name}</option>`).join("")}</select>
+    <input data-cof="map" data-i="${i}" value="${esc(c.map)}" placeholder="PSO1, PO2" aria-label="Maps to"></div>`).join("");
+}
+function parseCOs(txt) {
+  const out = []; let cur = null;
+  txt.split(/\r?\n/).map(l => l.replace(/\s+/g, " ").trim()).filter(Boolean).forEach(l => {
+    const m = l.match(/^CO\s*[-.:]?\s*(\d+)\s*[:.\-–)]?\s*(.*)$/i);
+    if (m) { cur = { code: "CO" + m[1], text: m[2], lv: "", kn: "", map: "" }; out.push(cur); }
+    else if (cur && !/^(CO\b|Cognitive|Knowledge|Evaluation)/i.test(l)) cur.text += " " + l;
+  });
+  out.forEach(c => {
+    const m = c.text.match(/\b(R|U|Ap|An|E|C)\s+(F|C|P|M)\b/);
+    if (m) { c.lv = m[1]; c.kn = m[2]; c.text = c.text.slice(0, m.index).trim(); }
+    else { const d = detect(c.text.replace(/^students? (will|shall|should)\s+/i, "")); if (d) c.lv = d.lv; }
+    c.text = c.text.trim();
+  });
+  return out;
+}
+// ================= institution settings =================
+const CF = { college: "cf-college", address: "cf-address", univ: "cf-univ", examTitle: "cf-title", secWord: "cf-secw", numStyle: "cf-num",
+  font: "cf-font", qPt: "cf-qpt", modWord: "cf-modw", unitWord: "cf-unitw", coWord: "cf-cow", headerMode: "cf-hmode" };
+const CFN = { nMods: "cf-nmods", nUnits: "cf-nunits", nCOs: "cf-ncos" };
+const CFB = { showMarks: "cf-marks", showDate: "cf-date", restart: "cf-restart", boldNum: "cf-boldn" };
+function syncCfgFields() {
+  Object.entries(CF).forEach(([k, id]) => $(id).value = cfg[k]);
+  Object.entries(CFN).forEach(([k, id]) => $(id).value = cfg[k]);
+  Object.entries(CFB).forEach(([k, id]) => $(id).checked = !!cfg[k]);
+  $("cf-logo-prev").hidden = !cfg.logo; if (cfg.logo) $("cf-logo-prev").src = cfg.logo;
+  $("cf-np-prev").hidden = !cfg.nameplate; if (cfg.nameplate) $("cf-np-prev").src = cfg.nameplate;
+}
+function applyBrand() {
+  $("mhsub").textContent = cfg.college.trim() ? cfg.college.trim() + (cfg.univ.trim() ? " \u00B7 " + cfg.univ.trim() : "") : "Set up your institution to begin";
+  $("cf-logo-prev").hidden = !cfg.logo; if (cfg.logo) $("cf-logo-prev").src = cfg.logo;
+}
+function applyStructure() {
+  const oldMods = state.mods.map(m => m.name), oldUnits = state.mods[0] ? state.mods[0].units.slice() : [], oldCos = state.cos.map(c => c.code);
+  const nm = Math.max(1, Math.min(12, Number(cfg.nMods) || 4)), nu = Math.max(1, Math.min(60, Number(cfg.nUnits) || 22)), nc = Math.max(1, Math.min(12, Number(cfg.nCOs) || 6));
+  cfg.nMods = nm; cfg.nUnits = nu; cfg.nCOs = nc;
+  const mw = cfg.modWord.trim() || "Module", uw = cfg.unitWord.trim() || "Unit", cw = cfg.coWord.trim() || "CO";
+  state.mods = Array.from({ length: nm }, (_, i) => ({ name: mw + " " + (i + 1), units: Array.from({ length: nu }, (_, j) => uw + " " + (j + 1)) }));
+  const prev = state.cos;
+  state.cos = Array.from({ length: nc }, (_, i) => Object.assign({ code: "", text: "", lv: "", kn: "", map: "" }, prev[i] || {}, { code: cw + (i + 1) }));
+  const remap = (v, olds, news) => { const i = olds.indexOf(v); return i >= 0 && i < news.length ? news[i] : ""; };
+  const newMods = state.mods.map(m => m.name), newUnits = state.mods[0].units, newCos = state.cos.map(c => c.code);
+  state.sections.forEach(s => s.qs.forEach(q => {
+    if (q.mod) q.mod = remap(q.mod, oldMods, newMods);
+    if (q.unit) q.unit = remap(q.unit, oldUnits, newUnits);
+    if (q.co) q.co = remap(q.co, oldCos, newCos);
+  }));
+  document.querySelector(".cohead span:first-child").textContent = cw;
+  buildCOs(); buildForm(); refresh();
+}
+function applyStructure0() { applyStructure(); }
+function readImage(file, maxW, cb) {
+  const fr = new FileReader();
+  fr.onload = () => { const img = new Image(); img.onload = () => {
+    const sc = Math.min(1, maxW / img.width), c = document.createElement("canvas");
+    c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); cb(c.toDataURL("image/png"));
+  }; img.onerror = () => cb(null); img.src = fr.result; };
+  fr.readAsDataURL(file);
+}
+function cfgMsg(t) { $("cf-msg").textContent = t; }
+function initSettings() {
+  loadCfg(); syncCfgFields(); applyBrand();
+  $("setup").open = !cfg.college.trim(); $("welcome").hidden = !!cfg.college.trim();
+  const live = () => {
+    Object.entries(CF).forEach(([k, id]) => { if (k !== "headerMode") cfg[k] = $(id).value; });
+    cfg.headerMode = $("cf-hmode").value;
+    Object.entries(CFB).forEach(([k, id]) => cfg[k] = $(id).checked);
+    saveCfg(); applyBrand(); $("welcome").hidden = !!cfg.college.trim(); buildForm(); refresh();
+  };
+  const structural = new Set(["cf-modw", "cf-unitw", "cf-cow", "cf-nmods", "cf-nunits", "cf-ncos"]);
+  $("setup").addEventListener("input", e => { if (structural.has(e.target.id) || e.target.type === "file") return; live(); });
+  $("setup").addEventListener("change", e => {
+    const t = e.target;
+    if (t.type === "file") return;
+    if (structural.has(t.id)) { Object.entries(CF).forEach(([k, id]) => cfg[k] = $(id).value); Object.entries(CFN).forEach(([k, id]) => cfg[k] = Number($(id).value)); saveCfg(); applyStructure(); return; }
+    live();
+  });
+  $("cf-logo").addEventListener("change", e => { const f = e.target.files[0]; if (!f) return;
+    readImage(f, 400, d => { if (!d) { cfgMsg("That image could not be read."); return; } cfg.logo = d; saveCfg(); applyBrand(); refresh(); cfgMsg("Logo updated."); }); e.target.value = ""; });
+  $("cf-np").addEventListener("change", e => { const f = e.target.files[0]; if (!f) return;
+    readImage(f, 1600, d => { if (!d) { cfgMsg("That image could not be read."); return; } cfg.nameplate = d; cfg.headerMode = "nameplate"; saveCfg(); syncCfgFields(); refresh(); cfgMsg("Nameplate added and selected."); }); e.target.value = ""; });
+  $("cf-logo-reset").addEventListener("click", () => { cfg.logo = ""; saveCfg(); applyBrand(); refresh(); cfgMsg("Logo removed."); });
+  $("cf-np-reset").addEventListener("click", () => { cfg.nameplate = ""; cfg.headerMode = "logo"; saveCfg(); syncCfgFields(); refresh(); cfgMsg("Nameplate removed."); });
+  $("cf-export").addEventListener("click", () => {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify({ app: "qpm-custom", cfg }, null, 1)], { type: "application/json" }));
+    a.download = "Question_paper_maker_settings.json"; a.click(); cfgMsg("Settings file saved. Share it with colleagues so they can import it.");
+  });
+  $("cf-import").addEventListener("click", () => $("cf-file").click());
+  $("cf-file").addEventListener("change", async e => {
+    try { const j = JSON.parse(await e.target.files[0].text()); if (!j.cfg) throw 0; cfg = Object.assign(JSON.parse(JSON.stringify(DEF_CFG)), j.cfg); saveCfg(); syncCfgFields(); applyBrand(); applyStructure(); loadTemplate(state.ctype); cfgMsg("Settings imported."); }
+    catch (err) { cfgMsg("That file is not a settings file from this app."); }
+    e.target.value = "";
+  });
+  let armed = false;
+  $("cf-reset").addEventListener("click", () => {
+    if (!armed) { armed = true; $("cf-reset").textContent = "Click again to confirm"; setTimeout(() => { armed = false; $("cf-reset").textContent = "Reset everything"; }, 4000); return; }
+    armed = false; $("cf-reset").textContent = "Reset everything";
+    cfg = JSON.parse(JSON.stringify(DEF_CFG)); saveCfg(); syncCfgFields(); applyBrand(); applyStructure(); loadTemplate(state.ctype); cfgMsg("Everything is back to the original settings.");
+  });
+  // layout buttons
+  $("savelay").addEventListener("click", () => {
+    cfg.tpl[state.ctype] = { maxMarks: Number($("maxm").value) || 0, sections: state.sections.map(s => ({ label: s.label, mode: s.mode, marks: s.marks, ceiling: s.ceiling, choose: s.choose, instr: s.instr, foot: s.foot, count: s.qs.length })) };
+    saveCfg(); $("laymsg").textContent = "Saved. This layout now opens whenever you pick this type of course.";
+  });
+  $("resetlay").addEventListener("click", () => { delete cfg.tpl[state.ctype]; saveCfg(); state.sections = []; loadTemplate(state.ctype); $("laymsg").textContent = "Back to the original college layout for this course type."; });
+  $("addsec").addEventListener("click", () => {
+    const last = state.sections[state.sections.length - 1], l = last ? last.label : "";
+    let nl = "";
+    if (/^\d+$/.test(l)) nl = String(Number(l) + 1); else if (/^[A-Za-z]$/.test(l)) nl = String.fromCharCode(l.charCodeAt(0) + 1); else nl = String(state.sections.length + 1);
+    state.sections.push({ label: nl, mode: "all", marks: 2, ceiling: null, choose: 1, instr: "", foot: "", qs: [newQ(), newQ()] });
+    buildForm(); refresh();
+  });
+  $("tally").addEventListener("click", () => {
+    const total = state.sections.reduce((a, s) => a + effectiveMarks(s), 0);
+    if (total !== Number($("maxm").value)) { $("maxm").value = total; refresh(); }
+  });
+}
+
+// ================= PDF download =================
+async function downloadPDF() {
+  const key = curSize(), z = SIZES[key], name = fileName(), y = window.scrollY;
+  $("msg").textContent = "Preparing PDF…";
+  window.scrollTo(0, 0);
+  try {
+    await html2pdf().set({
+      margin: z.margin, filename: name, image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: z.scale, useCORS: true, scrollX: 0, scrollY: 0 },
+      jsPDF: { unit: "mm", format: z.fmt, orientation: "portrait" }, pagebreak: { mode: ["css", "legacy"] }
+    }).from(paperHTML(key, false), "string").toPdf().get("pdf").then(pdf => {
+      const pages = pdf.internal.getNumberOfPages(), w = pdf.internal.pageSize.getWidth(), h = pdf.internal.pageSize.getHeight();
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(z.pn);
+      for (let i = 1; i <= pages; i++) { pdf.setPage(i); pdf.text(`Page ${i} of ${pages}`, w / 2, h - z.margin[2] / 2 + 1, { align: "center" }); }
+    }).save();
+    $("msg").textContent = "PDF downloaded: " + name;
+  } catch (e) {
+    $("msg").textContent = "Could not create the PDF (the PDF library needs an internet connection the first time the page is opened).";
+  } finally { window.scrollTo(0, y); }
+}
+
+// ================= inserting text into a question =================
+function insertText(si, qi, txt, kind) {
+  const ta = document.querySelector(`#secs textarea[data-s="${si}"][data-q="${qi}"]`); if (!ta) return;
+  const q = state.sections[si].qs[qi];
+  let v = ta.value, a = ta.selectionStart ?? v.length, b = ta.selectionEnd ?? v.length;
+  if (kind === "verb") { txt += " "; if (!v.trim() || /(^|[\n.?]\s*)$/.test(v.slice(0, a))) { /* capital already */ } else txt = txt.charAt(0).toLowerCase() + txt.slice(1); }
+  if (kind === "stem" && v.trim() && !/\n$/.test(v.slice(0, a))) txt = "\n" + txt;
+  if (kind === "stem" && !v.trim()) { a = 0; b = v.length; }
+  const nv = v.slice(0, a) + txt + v.slice(b);
+  ta.value = nv; q.t = nv;
+  let pos = a + txt.length, end = pos;
+  const hole = txt.indexOf("…");
+  if (kind === "stem" && hole >= 0) { pos = a + hole; end = pos + 1; }
+  else if (/\{\}$/.test(txt)) { pos = end = a + txt.length - 1; }
+  ta.focus(); ta.setSelectionRange(pos, end);
+  refresh(); updateDet(si, qi);
+}
+
+// ================= tabs =================
+function showTab(name) {
+  state.tab = name;
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === name)));
+  $("preview").hidden = name !== "paper";
+  $("pane-bp").hidden = name !== "bp"; $("pane-guide").hidden = name !== "guide"; 
+  $("deskh").textContent = { paper: "Preview", bp: "Blueprint", guide: "Bloom’s guide" }[name];
+  refresh();
+}
+
+// ================= events =================
+$("secs").addEventListener("focusin", e => { const t = e.target; if (t.tagName === "TEXTAREA") lastTA = { s: Number(t.dataset.s), q: Number(t.dataset.q) }; });
+$("secs").addEventListener("input", e => {
+  const t = e.target;
+  if (t.tagName === "TEXTAREA") { const s = +t.dataset.s, q = +t.dataset.q; state.sections[s].qs[q].t = t.value; refresh(); updateDet(s, q); }
+  else if (["label", "instr", "foot"].includes(t.dataset.f)) { state.sections[+t.dataset.s][t.dataset.f] = t.value; refresh(); }
+});
+$("secs").addEventListener("change", e => {
+  const t = e.target;
+  if (t.dataset.t) {
+    const q = state.sections[+t.dataset.s].qs[+t.dataset.q];
+    q[t.dataset.t] = t.value;
+    if (t.dataset.t === "mod") q.unit = "";
+    buildForm(); refresh(); return;
+  }
+  const f = t.dataset.f; if (!f) return;
+  if (f === "label" || f === "instr" || f === "foot") { const h = document.querySelectorAll("#secs .sec h3")[+t.dataset.s]; if (h) h.textContent = secTitle(state.sections[+t.dataset.s]); return; }
+  const s = state.sections[t.dataset.s];
+  if (f === "mode") s.mode = t.value;
+  else if (f === "ceiling") s.ceiling = t.value === "" ? null : Math.max(0, Number(t.value));
+  else s[f] = Math.max(1, Number(t.value) || 1);
+  buildForm(); refresh();
+});
+$("secs").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const d = b.dataset;
+  if (d.add !== undefined) state.sections[d.add].qs.push(newQ());
+  else if (d.delsec !== undefined) { state.sections.splice(+d.delsec, 1); state.open = null; }
+  else if (d.del) {
+    const [si, qi] = d.del.split(":").map(Number), qs = state.sections[si].qs;
+    if (qs.length > 1) qs.splice(qi, 1); else qs[0] = newQ();
+    state.open = null;
+  }
+  else if (d.frame || d.symtog) {
+    const k = d.frame || d.symtog, kind = d.frame ? "frame" : "sym";
+    state.open = state.open && state.open.k === k && state.open.kind === kind ? null : { k, kind };
+  }
+  else if (d.lvpick) { state.sections[+d.s].qs[+d.q].lv = d.lvpick; }
+  else if (d.usedet) { state.sections[+d.s].qs[+d.q].lv = d.usedet; }
+  else if (d.ins !== undefined) { insertText(+d.s, +d.q, d.ins, d.verb ? "verb" : d.stem ? "stem" : ""); return; }
+  else return;
+  buildForm(); refresh();
+});
+$("tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) showTab(b.dataset.tab); });
+$("pane-guide").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b || !b.dataset.gverb) return;
+  if (!lastTA) { alert("Click inside a question first, then choose a verb."); return; }
+  insertText(lastTA.s, lastTA.q, b.dataset.gverb, "verb");
+});
+$("pos").addEventListener("input", () => { if (state.tab === "bp") renderBP(); });
+$("coread").addEventListener("click", () => {
+  const got = parseCOs($("copaste").value);
+  if (got.length) { got.forEach(g => { const c = state.cos.find(x => x.code === g.code); if (c) { c.text = g.text; c.lv = g.lv; c.kn = g.kn; } }); buildCOs(); refreshCOSelects(); refresh(); }
+});
+$("cos").addEventListener("input", e => { const t = e.target, f = t.dataset.cof; if (f) state.cos[+t.dataset.i][f] = t.value; });
+$("cos").addEventListener("change", e => { const t = e.target; if (t.dataset.cof) { state.cos[+t.dataset.i][t.dataset.cof] = t.value; refreshCOSelects(); refresh(); } });
+
+function fillSelect(id, items, placeholder) {
+  $(id).innerHTML = `<option value="">${placeholder}</option>` + items.map((x, i) => `<option value="${typeof x === "string" ? esc(x) : i}">${esc(typeof x === "string" ? (id === "sem" ? "Semester " + x : x) : x.label)}</option>`).join("");
+}
+$("ctype").innerHTML = PRESETS.map((p, i) => `<option value="${i}">${esc(p.label)}</option>`).join("");
+fillSelect("sem", SEMESTERS, "Not shown");
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const thisYear = new Date().getFullYear();
+fillSelect("mon", MONTHS, "Not shown");
+fillSelect("yr", Array.from({ length: 8 }, (_, i) => String(thisYear - 1 + i)), "Not shown");
+$("mon").value = MONTHS[new Date().getMonth()];
+$("yr").value = String(thisYear);
+$("ctype").addEventListener("change", () => {
+  const want = PRESETS[Number($("ctype").value)].t;
+  if (want !== state.ctype) loadTemplate(want); else refresh();
+});
+["sem", "ctext", "dept", "mon", "yr", "fac", "nstud", "code", "cname", "time", "maxm"].forEach(id => { $(id).addEventListener("input", refresh); $(id).addEventListener("change", refresh); });
+$("dl").addEventListener("click", downloadPDF);
+
+renderGuide();
+initSettings();
+syncCfgFields();
+state.mods = []; state.cos = [];
+state.sections = [];
+applyStructure0();
+loadTemplate("major");
+</script>
+</body>
+</html>
